@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/christophwitzko/go-curl"
+	"time"
 )
 
 func test1(url string, opts ...interface{}) {
 	var st curl.IocopyStat
-	err := curl.File(
+	err, _ := curl.File(
 		url,
 		"a.test",
 		append(opts, &st)...)
@@ -25,21 +26,61 @@ func test2(url string, opts ...interface{}) {
 			}, "timeout=10")...,
 	)
 }
-
 func test3() {
 	curl.File(
 		"http://de.edis.at/10MB.test",
 		"a.test",
 		func(st curl.IocopyStat) error {
-			fmt.Println(st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
+			//fmt.Println(st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
+			fmt.Println(st.Stat)
+			fmt.Println(st.Header["Date"])
 			return nil
 		},
 		"maxspeed=", 30*1000,
 	)
 }
 
-func main() {
-	test2(
+func test4() {
+	err, _, header := curl.String("http://google.com")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(header)
+}
+
+func test5() {
+	var st curl.IocopyStat
+	curl.File("http://de.edis.at/10MB.test", "a.test", &st)
+	fmt.Println("size=", st.Sizestr, "average speed=", st.Speedstr, "server=", st.Header["Server"][0])
+}
+
+func test6() {
+	con := &curl.Control{}
+	go curl.File("http://de.edis.at/10MB.test", "a.test", con)
+	for {
+		st := con.Stat()
+		fmt.Println(st.Stat, st.Perstr)
+		if st.Done {
+			return
+		}
+		time.Sleep(1000 * time.Millisecond)
+	}
+
+}
+
+func test7() {
+	curl.File(
 		"http://de.edis.at/10MB.test",
-		"maxspeed=", 1000)
+		"a.test",
+		func(st curl.IocopyStat) error {
+			fmt.Println(st.Stat, st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
+			// return errors.New("I want to stop")
+			return nil
+		},
+	)
+}
+
+func main() {
+	test7()
 }

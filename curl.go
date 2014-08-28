@@ -1,154 +1,3 @@
-/*
-
-Curl library for golang
-====
-
-* WITHOUT libcurl.so just using "net/http"
-* Monitoring progress
-* Timeouts and deadline
-* Speed limit
-
-## Simple Usage
-
-### Curl string or bytes
-
-    import "github.com/go-av/curl"
-
-  	err, str := curl.String("http://www.baidu.com")
-  	err, b := curl.Bytes("http://www.baidu.com")
-
-### Save to file or writer
-
-    err := curl.File("www.baidu.com", "/tmp/index.html")
-
-  	var w io.Writer
-  	err := curl.Write("http://www.baidu.com", w)
-
-### With timeout (both dial timeout and read timeout set)
-
-  	curl.String("http://www.baidu.com", "timeout=10")
-  	curl.String("http://www.baidu.com", "timeout=", 10)
-  	curl.String("http://www.baidu.com", "timeout=", time.Second*10)
-
-### With different dial timeout and read timeout
-
-    curl.String("http://www.baidu.com", "dialtimeout=10", "readtimeout=20")
-  	curl.String("http://www.baidu.com", "dialtimeout=", 10, "readtimeout=", time.Second*20)
-
-### With deadline (if cannot download in 10s then die)
-
-    curl.File("http://www.baidu.com", "index.html", "deadline=", time.Now().Add(time.Second*10))
-  	curl.File("http://www.baidu.com", "index.html", "deadline=10")
-  	curl.File("http://www.baidu.com", "index.html", "deadline=", 10.0)
-  	curl.File("http://www.baidu.com", "index.html", "deadline=", time.Second*10)
-
-### With speed limit
-
-    curl.File("http://www.baidu.com", "index.html", "maxspeed=", 30*1024)
-
-### With custom http header
-
-    header := http.Header {
-  		"User-Agent" : {"curl/7.29.0"},
-  	}
-  	curl.File("http://www.baidu.com", "file", header)
-
-### These params can be use in any function and in any order
-
-    curl.File("http://www.baidu.com", "index.html", "timeout=", 10, header)
-  	curl.String("http://www.baidu.com", index.html", timeout=", 10)
-
-## Advanced Usage
-
-### Get detail info
-
-    var st curl.IocopyStat
-    curl.File(
-      "http://tk.wangyuehd.com/soft/skycn/WinRAR.exe_2.exe",
-    	"a.exe",
-    	&st)
-    fmt.Println("size=", st.Sizestr, "average speed=", st.Speedstr)
-
-outputs
-
-    size= 1307880 average speed= 118898
-
-### Monitor progress
-
-    curl.File(
-  		"http://tk.wangyuehd.com/soft/skycn/WinRAR.exe_2.exe",
-  		"a.exe",
-  		func (st curl.IocopyStat) error {
-  			fmt.Println(st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
-        // return errors.New("I want to stop")
-  			return nil
-  		},
-  	)
-
-outputs
-
-    5.1% 65.2K 1.2M 65.2K/s 0:01
-    9.3% 119.1K 1.2M 53.9K/s 0:02
-    14.0% 178.7K 1.2M 59.6K/s 0:03
-    18.7% 238.2K 1.2M 59.6K/s 0:04
-    23.9% 304.9K 1.2M 66.6K/s 0:05
-    32.4% 414.0K 1.2M 109.2K/s 0:06
-    35.0% 446.7K 1.2M 32.6K/s 0:07
-    43.1% 550.2K 1.2M 103.5K/s 0:08
-    48.3% 616.8K 1.2M 66.6K/s 0:09
-    58.2% 743.0K 1.2M 126.2K/s 0:10
-    71.3% 910.3K 1.2M 167.3K/s 0:11
-    73.6% 940.1K 1.2M 29.8K/s 0:12
-    73.6% 940.1K 1.2M 0B/s 0:13
-    81.4% 1.0M 1.2M 99.3K/s 0:14
-    86.5% 1.1M 1.2M 65.2K/s 0:15
-    94.8% 1.2M 1.2M 106.3K/s 0:16
-    100.0% 1.2M 1.2M 79.8K/s 0:16
-
-### Set monitor callback interval
-
-  	curl.File("xxxx", "xxx", cb, "cbinterval=", 0.5) // 0.5 second
-
-### Curl in goroutine
-
-  	con := &curl.Control{}
-  	go curl.File("xxx", "xxx", con)
-  	// and then get stat
-  	st := con.Stat()
-  	// or stop
-  	con.Stop()
-    // set max speed
-    con.MaxSpeed(1024*10)
-    // cancel max speed
-    con.MaxSpeed(0)
-
-### Just dial
-
-    err, r, length := curl.Dial("http://weibo.com", "timeout=11")
-    fmt.Println("contentLength=", length)
-
-## Useful Functions
-
-### Functions format size, speed pretty
-
-  	curl.PrettySize(13500) // 13.5K
-  	curl.PrettySize(2500000) // 2.5M
-  	curl.PrettyPer(0.345) // 34.5%
-  	curl.PrettySpeed(1200) // 1.2K/s
-  	curl.PrettyDur(time.Second*66) // 1:06
-
-### Progressed io.Copy
-
-    r, _ := os.Open("infile")
-    w, _ := os.Create("outfile")
-    length := 1024*888
-    cb := func (st curl.IocopyStat) error {
-    		fmt.Println(st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
-  			return nil
-  	}
-  	curl.IoCopy(r, length, w, "readtimeout=12", cb)
-
-*/
 package curl
 
 import (
@@ -156,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -165,7 +13,7 @@ import (
 )
 
 type IocopyStat struct {
-	Stat      string        // dial,download
+	Stat      string        // connecting, header, downloading, finished
 	Done      bool          // download is done
 	Begin     time.Time     // download begin time
 	Dur       time.Duration // download elapsed time
@@ -178,6 +26,7 @@ type IocopyStat struct {
 	Sizestr   string        // pretty format of Size. like: 1.1M, 3.5G, 33K
 	Speedstr  string        // pretty format of Speed. like 1.1M/s
 	Lengthstr string        // pretty format of Length. like: 1.1M, 3.5G, 33K
+	Header    http.Header   // response header
 }
 
 type Control struct {
@@ -191,15 +40,21 @@ type Control struct {
 
 type IocopyCb func(st IocopyStat) error
 
+/*
+???
 type deadlineS interface {
 	SetReadDeadline(t time.Time) error
-}
+}*/
 
 func (c *Control) Stop() {
 	c.stop = true
 }
 
 func (c *Control) Stat() IocopyStat {
+	//really diry solution to prevent invalid memory address error
+	if c.st == nil {
+		return *&IocopyStat{Stat: "connecting"}
+	}
 	c.st.update()
 	return *c.st
 }
@@ -284,14 +139,16 @@ func optInt64(name string, opts []interface{}) (got bool, i int64) {
 	return
 }
 
+/*
+debugging?
 func dbp(opts ...interface{}) {
 	if false {
 		log.Println(opts...)
 	}
 }
+*/
 
 func (st *IocopyStat) update() {
-	st.Stat = "downloading"
 	if st.Length > 0 {
 		st.Per = float64(st.Size) / float64(st.Length)
 	}
@@ -307,6 +164,8 @@ func (st *IocopyStat) finish() {
 	dur := float64(time.Since(st.Begin)) / float64(time.Second)
 	st.Speed = int64(float64(st.Size) / dur)
 	st.Per = 1.0
+	st.Done = true
+	st.Stat = "finished"
 	st.update()
 }
 
@@ -337,15 +196,11 @@ func (m *mywriter) Write(p []byte) (n int, err error) {
 	return
 }
 
-func IoCopy(
-	r io.ReadCloser,
-	length int64,
-	w io.Writer,
-	opts ...interface{},
-) (err error) {
+func IoCopy(r io.ReadCloser, length int64, w io.Writer, opts ...interface{}) (err error) {
 	var st *IocopyStat
 	var cb IocopyCb
 	var ct *Control
+	var header http.Header
 
 	for _, o := range opts {
 		switch o.(type) {
@@ -353,6 +208,8 @@ func IoCopy(
 			st = o.(*IocopyStat)
 		case *Control:
 			ct = o.(*Control)
+		case http.Header:
+			header = o.(http.Header)
 		case func(IocopyStat) error:
 			cb = o.(func(IocopyStat) error)
 		}
@@ -362,8 +219,13 @@ func IoCopy(
 	if st == nil {
 		st = &IocopyStat{}
 	}
+
 	if ct == nil {
 		ct = &Control{st: st}
+	}
+
+	if ct.st == nil {
+		ct.st = st
 	}
 
 	var rto time.Duration
@@ -390,6 +252,10 @@ func IoCopy(
 
 	_, ct.maxSpeed = optInt64("maxspeed=", opts)
 
+	st.Stat = "downloading"
+	if header != nil {
+		st.Header = header
+	}
 	st.Begin = time.Now()
 	st.Length = length
 
@@ -472,9 +338,7 @@ func IoCopy(
 	return
 }
 
-func Dial(url string, opts ...interface{}) (
-	err error, r io.ReadCloser, length int64,
-) {
+func Dial(url string, opts ...interface{}) (err error, r io.ReadCloser, length int64, retHeader http.Header) {
 	var req *http.Request
 	var cb IocopyCb
 
@@ -568,50 +432,57 @@ out:
 		return
 	}
 
+	if callcb(IocopyStat{Stat: "header", Header: resp.Header}) {
+		return
+	}
 	r = resp.Body
 	length = resp.ContentLength
+	retHeader = resp.Header
+
+	fmt.Println(resp.StatusCode)
+
 	return
 }
 
-func String(url string, opts ...interface{}) (err error, body string) {
+func String(url string, opts ...interface{}) (err error, body string, header http.Header) {
 	var b bytes.Buffer
-	err = Write(url, &b, opts...)
+	err, header = Write(url, &b, opts...)
 	body = string(b.Bytes())
 	return
 }
 
-func Bytes(url string, opts ...interface{}) (err error, body []byte) {
+func Bytes(url string, opts ...interface{}) (err error, body []byte, header http.Header) {
 	var b bytes.Buffer
-	err = Write(url, &b, opts...)
+	err, header = Write(url, &b, opts...)
 	body = b.Bytes()
 	return
 }
 
-func File(url string, path string, opts ...interface{}) (err error) {
+func File(url string, path string, opts ...interface{}) (err error, header http.Header) {
 	var w io.WriteCloser
 	w, err = os.Create(path)
 	if err != nil {
 		return
 	}
 	defer w.Close()
-	err = Write(url, w, opts...)
+	err, header = Write(url, w, opts...)
 	return
 }
 
-func Write(url string, w io.Writer, opts ...interface{}) (err error) {
+func Write(url string, w io.Writer, opts ...interface{}) (err error, header http.Header) {
 	var r io.ReadCloser
 	var length int64
-	err, r, length = Dial(url, opts...)
+	err, r, length, header = Dial(url, opts...)
 	if err != nil {
 		return
 	}
-	err = IoCopy(r, length, w, opts...)
+	err = IoCopy(r, length, w, append(opts, header)...)
 	return
 }
 
 func PrettyDur(dur time.Duration) string {
 	d := float64(dur) / float64(time.Second)
-	if d < 60*60 {
+	if d < 3600 {
 		return fmt.Sprintf("%d:%.2d", int(d/60), int(d)%60)
 	}
 	return fmt.Sprintf("%d:%.2d:%.2d", int(d/3600), int(d/60)%60, int(d)%60)
@@ -637,16 +508,16 @@ func prettySize(_size interface{}, mul float64, tag []string) string {
 		return ""
 	}
 	size *= mul
-	if size < 1024 {
-		return fmt.Sprintf("%.1f%s", size, tag[0])
+
+	isc := 0
+	for {
+		if isc > 2 || size < 1024 {
+			break
+		}
+		size = size / 1024.0
+		isc++
 	}
-	if size < 1024*1024 {
-		return fmt.Sprintf("%.1f%s", size/1024, tag[1])
-	}
-	if size < 1024*1024*1024 {
-		return fmt.Sprintf("%.1f%s", size/1024/1024, tag[2])
-	}
-	return fmt.Sprintf("%.1f%s", size/1024/1024/1024, tag[3])
+	return fmt.Sprintf("%.1f%s", size, tag[isc])
 
 }
 

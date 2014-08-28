@@ -13,49 +13,49 @@
 ```go
 import "github.com/christophwitzko/go-curl"
 
-err, str := curl.String("http://www.baidu.com")
-err, b := curl.Bytes("http://www.baidu.com")
+err, str, header := curl.String("http://google.com")
+err, b, _ := curl.Bytes("http://google.com")
 ```
 ### Save to file or writer
 ```go
-err := curl.File("www.baidu.com", "/tmp/index.html")
+err, header := curl.File("http://google.com", "/tmp/index.html")
 
 var w io.Writer
-err := curl.Write("http://www.baidu.com", w)
+err, header := curl.Write("http://google.com", w)
 ```
 ### With timeout (both dial timeout and read timeout set)
 ```go
-curl.String("http://www.baidu.com", "timeout=10")
-curl.String("http://www.baidu.com", "timeout=", 10)
-curl.String("http://www.baidu.com", "timeout=", time.Second*10)
+curl.String("http://google.com", "timeout=10")
+curl.String("http://google.com", "timeout=", 10)
+curl.String("http://google.com", "timeout=", time.Second*10)
 ```
 ### With different dial timeout and read timeout
 ```go
-curl.String("http://www.baidu.com", "dialtimeout=10", "readtimeout=20")
-curl.String("http://www.baidu.com", "dialtimeout=", 10, "readtimeout=", time.Second*20)
+curl.String("http://google.com", "dialtimeout=10", "readtimeout=20")
+curl.String("http://google.com", "dialtimeout=", 10, "readtimeout=", time.Second*20)
 ```
 ### With deadline (if cannot download in 10s then die)
 ```go
-curl.File("http://www.baidu.com", "index.html", "deadline=", time.Now().Add(time.Second*10))
-curl.File("http://www.baidu.com", "index.html", "deadline=10")
-curl.File("http://www.baidu.com", "index.html", "deadline=", 10.0)
-curl.File("http://www.baidu.com", "index.html", "deadline=", time.Second*10)
+curl.File("http://google.com", "index.html", "deadline=", time.Now().Add(time.Second*10))
+curl.File("http://google.com", "index.html", "deadline=10")
+curl.File("http://google.com", "index.html", "deadline=", 10.0)
+curl.File("http://google.com", "index.html", "deadline=", time.Second*10)
 ```
 ### With speed limit
 ```go
-curl.File("http://www.baidu.com", "index.html", "maxspeed=", 30*1024)
+curl.File("http://google.com", "index.html", "maxspeed=", 30*1024)
 ```
 ### With custom http header
 ```go
 header := http.Header {
   "User-Agent" : {"curl/7.29.0"},
 }
-curl.File("http://www.baidu.com", "file", header)
+curl.File("http://google.com", "file", header)
 ```
 ### These params can be use in any function and in any order
 ```go
-curl.File("http://www.baidu.com", "index.html", "timeout=", 10, header)
-curl.String("http://www.baidu.com", index.html", timeout=", 10)
+curl.File("http://google.com", "index.html", "timeout=", 10, header)
+curl.String("http://google.com", index.html", timeout=", 10)
 ```
 ## Advanced Usage
 
@@ -63,43 +63,53 @@ curl.String("http://www.baidu.com", index.html", timeout=", 10)
 ```go
 var st curl.IocopyStat
 curl.File("http://tk.wangyuehd.com/soft/skycn/WinRAR.exe_2.exe", "a.exe", &st)
-fmt.Println("size=", st.Sizestr, "average speed=", st.Speedstr)
+fmt.Println("size=", st.Sizestr, "average speed=", st.Speedstr, "server=", st.Header["Server"][0])
 ```
-outputs
+#### Outputs:
 ```
-size= 1307880 average speed= 118898
+size= 9.5MB average speed= 1.9MB/s server= nginx/0.7.67
+```
+
+#### The IocopyStat struct:
+```go
+type IocopyStat struct {
+  Stat      string        // connection, header, downloading, finished
+  Done      bool          // download is done
+  Begin     time.Time     // download begin time
+  Dur       time.Duration // download elapsed time
+  Per       float64       // complete percent. range 0.0 ~ 1.0
+  Size      int64         // bytes downloaded
+  Speed     int64         // bytes per second
+  Length    int64         // content length
+  Durstr    string        // pretty format of Dur. like: 10:11
+  Perstr    string        // pretty format of Per. like: 3.9%
+  Sizestr   string        // pretty format of Size. like: 1.1M, 3.5G, 33K
+  Speedstr  string        // pretty format of Speed. like 1.1M/s
+  Lengthstr string        // pretty format of Length. like: 1.1M, 3.5G, 33K
+  Header    http.Header   // response header
+}
 ```
 ### Monitor progress
 ```go
 curl.File(
-  "http://tk.wangyuehd.com/soft/skycn/WinRAR.exe_2.exe",
-  "a.exe",
-  func (st curl.IocopyStat) error {
-      fmt.Println(st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
-      // return errors.New("I want to stop")
-      return nil
+  "http://de.edis.at/10MB.test",
+  "a.test",
+  func(st curl.IocopyStat) error {
+    fmt.Println(st.Stat, st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
+    // return errors.New("I want to stop")
+    return nil
   },
 )
 ```
-outputs
+#### Outputs:
 ```
-5.1% 65.2K 1.2M 65.2K/s 0:01
-9.3% 119.1K 1.2M 53.9K/s 0:02
-14.0% 178.7K 1.2M 59.6K/s 0:03
-18.7% 238.2K 1.2M 59.6K/s 0:04
-23.9% 304.9K 1.2M 66.6K/s 0:05
-32.4% 414.0K 1.2M 109.2K/s 0:06
-35.0% 446.7K 1.2M 32.6K/s 0:07
-43.1% 550.2K 1.2M 103.5K/s 0:08
-48.3% 616.8K 1.2M 66.6K/s 0:09
-58.2% 743.0K 1.2M 126.2K/s 0:10
-71.3% 910.3K 1.2M 167.3K/s 0:11
-73.6% 940.1K 1.2M 29.8K/s 0:12
-73.6% 940.1K 1.2M 0B/s 0:13
-81.4% 1.0M 1.2M 99.3K/s 0:14
-86.5% 1.1M 1.2M 65.2K/s 0:15
-94.8% 1.2M 1.2M 106.3K/s 0:16
-100.0% 1.2M 1.2M 79.8K/s 0:16
+connecting     
+header     
+downloading 17.2% 1.6MB 9.5MB 1.6MB/s 0:01
+downloading 38.3% 3.6MB 9.5MB 2.0MB/s 0:02
+downloading 59.5% 5.7MB 9.5MB 2.0MB/s 0:03
+downloading 83.9% 8.0MB 9.5MB 2.3MB/s 0:04
+finished 100.0% 9.5MB 9.5MB 2.0MB/s 0:04
 ```
 ### Set monitor callback interval
 ```go
@@ -120,17 +130,16 @@ con.MaxSpeed(0)
 ```
 ### Just dial
 ```go
-err, r, length := curl.Dial("http://weibo.com", "timeout=11")
+_, _, length, header := curl.Dial("http://de.edis.at/10MB.test", "timeout=11")
 fmt.Println("contentLength=", length)
 ```
 ## Useful Functions
 
 ### Functions format size, speed pretty
 ```go
-curl.PrettySize(13500) // 13.5K
-curl.PrettySize(2500000) // 2.5M
+curl.PrettySize(100000000)) // 95.4MB
 curl.PrettyPer(0.345) // 34.5%
-curl.PrettySpeed(1200) // 1.2K/s
+curl.PrettySpeed(1200) // 1.2KB/s
 curl.PrettyDur(time.Second*66) // 1:06
 ```
 ### Progressed io.Copy

@@ -1,12 +1,13 @@
 # go-curl
 
 > Fork from https://github.com/go-av/curl
-> examples test/test_curl.go
 
 * WITHOUT libcurl.so just using "net/http"
 * Monitoring progress
 * Timeouts and deadline
 * Speed limit
+
+Examples: test/test_curl.go
 
 ## Simple Usage
 

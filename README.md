@@ -58,7 +58,7 @@ curl.File("http://google.com", "file", header)
 ### These params can be use in any function and in any order
 ```go
 curl.File("http://google.com", "index.html", "timeout=", 10, header)
-curl.String("http://google.com", index.html", timeout=", 10)
+curl.String("http://google.com", "index.html", timeout=", 10)
 ```
 ## Advanced Usage
 

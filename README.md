@@ -80,7 +80,7 @@ curl.String("http://google.com", "index.html", "timeout=", 10)
 ```go
 var st curl.IocopyStat
 curl.File("http://de.edis.at/10MB.test", "a.test", &st)
-fmt.Println("size=", st.Sizestr, "average speed=", st.Speedstr, "server=", st.Header["Server"][0])
+fmt.Println("size=", st.Sizestr, "average speed=", st.Speedstr, "server=", st.Header.Get("Server"))
 ```
 #### Outputs:
 ```

@@ -200,7 +200,7 @@ func IoCopy(r io.ReadCloser, length int64, w io.Writer, opts ...interface{}) (er
 	var st *IocopyStat
 	var cb IocopyCb
 	var ct *Control
-	var header http.Header
+	var resp *http.Response
 
 	for _, o := range opts {
 		switch o.(type) {
@@ -208,8 +208,8 @@ func IoCopy(r io.ReadCloser, length int64, w io.Writer, opts ...interface{}) (er
 			st = o.(*IocopyStat)
 		case *Control:
 			ct = o.(*Control)
-		case http.Header:
-			header = o.(http.Header)
+		case *http.Response:
+			resp = o.(*http.Response)
 		case func(IocopyStat) error:
 			cb = o.(func(IocopyStat) error)
 		}
@@ -253,8 +253,8 @@ func IoCopy(r io.ReadCloser, length int64, w io.Writer, opts ...interface{}) (er
 	_, ct.maxSpeed = optInt64("maxspeed=", opts)
 
 	st.Stat = "downloading"
-	if header != nil {
-		st.Header = header
+	if resp != nil {
+		st.Header = resp.Header
 	}
 	st.Begin = time.Now()
 	st.Length = length
@@ -389,6 +389,7 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 	}
 	client := &http.Client{
 		Transport: tr,
+		// TODO: CheckRedirect func(req *Request, via []*Request) error
 	}
 
 	callcb := func(st IocopyStat) bool {
@@ -439,39 +440,37 @@ out:
 	return
 }
 
-func String(url string, opts ...interface{}) (err error, body string, header http.Header) {
+func String(url string, opts ...interface{}) (err error, body string, resp *http.Response) {
 	var b bytes.Buffer
-	err, header = Write(url, &b, opts...)
+	err, resp = Write(url, &b, opts...)
 	body = string(b.Bytes())
 	return
 }
 
-func Bytes(url string, opts ...interface{}) (err error, body []byte, header http.Header) {
+func Bytes(url string, opts ...interface{}) (err error, body []byte, resp *http.Response) {
 	var b bytes.Buffer
-	err, header = Write(url, &b, opts...)
+	err, resp = Write(url, &b, opts...)
 	body = b.Bytes()
 	return
 }
 
-func File(url string, path string, opts ...interface{}) (err error, header http.Header) {
+func File(url string, path string, opts ...interface{}) (err error, resp *http.Response) {
 	var w io.WriteCloser
 	w, err = os.Create(path)
 	if err != nil {
 		return
 	}
 	defer w.Close()
-	err, header = Write(url, w, opts...)
+	err, resp = Write(url, w, opts...)
 	return
 }
 
-func Write(url string, w io.Writer, opts ...interface{}) (err error, header http.Header) {
-	var resp *http.Response
+func Write(url string, w io.Writer, opts ...interface{}) (err error, resp *http.Response) {
 	err, resp = Dial(url, opts...)
-	header = resp.Header
 	if err != nil {
 		return
 	}
-	err = IoCopy(resp.Body, resp.ContentLength, w, append(opts, resp.Header)...)
+	err = IoCopy(resp.Body, resp.ContentLength, w, append(opts, resp)...)
 	return
 }
 

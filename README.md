@@ -1,6 +1,7 @@
 # go-curl
 
 > Fork from https://github.com/go-av/curl
+> examples test/test_curl.go
 
 * WITHOUT libcurl.so just using "net/http"
 * Monitoring progress
@@ -13,15 +14,16 @@
 ```go
 import "github.com/christophwitzko/go-curl"
 
-err, str, header := curl.String("http://google.com")
+err, str, resp := curl.String("http://google.com")
+// access response header: resp.Header["Server"]
 err, b, _ := curl.Bytes("http://google.com")
 ```
 ### Save to file or writer
 ```go
-err, header := curl.File("http://google.com", "/tmp/index.html")
+err, resp := curl.File("http://google.com", "/tmp/index.html")
 
 var w io.Writer
-err, header := curl.Write("http://google.com", w)
+err, resp := curl.Write("http://google.com", w)
 ```
 ### With timeout (both dial timeout and read timeout set)
 ```go
@@ -62,7 +64,7 @@ curl.String("http://google.com", index.html", timeout=", 10)
 ### Get detail info
 ```go
 var st curl.IocopyStat
-curl.File("http://tk.wangyuehd.com/soft/skycn/WinRAR.exe_2.exe", "a.exe", &st)
+curl.File("http://de.edis.at/10MB.test", "a.test", &st)
 fmt.Println("size=", st.Sizestr, "average speed=", st.Speedstr, "server=", st.Header["Server"][0])
 ```
 #### Outputs:
@@ -130,8 +132,8 @@ con.MaxSpeed(0)
 ```
 ### Just dial
 ```go
-_, _, length, header := curl.Dial("http://de.edis.at/10MB.test", "timeout=11")
-fmt.Println("contentLength=", length)
+err, resp := curl.Dial("http://de.edis.at/10MB.test", "timeout=11")
+fmt.Println("contentLength=", resp.ContentLength)
 ```
 ## Useful Functions
 

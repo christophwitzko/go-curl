@@ -41,12 +41,12 @@ func test3() {
 }
 
 func test4() {
-	err, _, header := curl.String("http://google.com")
+	err, _, resp := curl.String("http://google.com")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(header)
+	fmt.Println(resp.Header["Server"])
 }
 
 func test5() {
@@ -82,5 +82,5 @@ func test7() {
 }
 
 func main() {
-	test7()
+	test4()
 }

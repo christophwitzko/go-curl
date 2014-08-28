@@ -338,7 +338,7 @@ func IoCopy(r io.ReadCloser, length int64, w io.Writer, opts ...interface{}) (er
 	return
 }
 
-func Dial(url string, opts ...interface{}) (err error, r io.ReadCloser, length int64, retHeader http.Header) {
+func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 	var req *http.Request
 	var cb IocopyCb
 
@@ -435,12 +435,7 @@ out:
 	if callcb(IocopyStat{Stat: "header", Header: resp.Header}) {
 		return
 	}
-	r = resp.Body
-	length = resp.ContentLength
-	retHeader = resp.Header
-
-	fmt.Println(resp.StatusCode)
-
+	retResp = resp
 	return
 }
 
@@ -470,13 +465,13 @@ func File(url string, path string, opts ...interface{}) (err error, header http.
 }
 
 func Write(url string, w io.Writer, opts ...interface{}) (err error, header http.Header) {
-	var r io.ReadCloser
-	var length int64
-	err, r, length, header = Dial(url, opts...)
+	var resp *http.Response
+	err, resp = Dial(url, opts...)
+	header = resp.Header
 	if err != nil {
 		return
 	}
-	err = IoCopy(r, length, w, append(opts, header)...)
+	err = IoCopy(resp.Body, resp.ContentLength, w, append(opts, resp.Header)...)
 	return
 }
 

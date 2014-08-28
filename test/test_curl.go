@@ -33,7 +33,7 @@ func test3() {
 		func(st curl.IocopyStat) error {
 			//fmt.Println(st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
 			fmt.Println(st.Stat)
-			fmt.Println(st.Header["Date"])
+			//fmt.Println(st.Header["Date"])
 			return nil
 		},
 		"maxspeed=", 30*1000,
@@ -42,18 +42,25 @@ func test3() {
 }
 
 func test4() {
-	err, _, resp := curl.String("http://google.com")
+	cb := func(st curl.IocopyStat) error {
+		fmt.Println(st.Stat)
+		if st.Response != nil {
+			fmt.Println(st.Response.Status)
+		}
+		return nil
+	}
+	err, _, resp := curl.String("http://google.com/404", cb)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(resp.Header["Server"])
+	fmt.Println(resp.Header.Get("Server"))
 }
 
 func test5() {
 	var st curl.IocopyStat
 	curl.File("http://de.edis.at/10MB.test", "a.test", &st)
-	fmt.Println("size=", st.Sizestr, "average speed=", st.Speedstr, "server=", st.Header["Server"][0])
+	fmt.Println("size=", st.Sizestr, "average speed=", st.Speedstr, "server=", st.Header.Get("Server"))
 }
 
 func test6() {
@@ -76,15 +83,15 @@ func test7() {
 		case "downloading", "finished":
 			fmt.Println("D", st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
 		case "header":
-			fmt.Println("Server:", st.Header["Server"][0])
+			fmt.Println("Server:", st.Header.Get("Server"))
 		}
 
 		// return errors.New("I want to stop")
 		return nil
 	}
-	curl.File("http://de.edis.at/10MB.test", "a.test", cb, "cbinterval=", 0.1, "maxspeed=", 2*1024*1024)
+	curl.File("http://de.edis.at/10MB.test", "a.test", cb, "cbinterval=", 0.1, "maxspeed=", 12.5*1024*1024)
 }
 
 func main() {
-	test7()
+	test4()
 }

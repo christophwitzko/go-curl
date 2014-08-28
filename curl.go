@@ -14,20 +14,22 @@ import (
 )
 
 type IocopyStat struct {
-	Stat      string        // connecting, header, downloading, finished
-	Done      bool          // download is done
-	Begin     time.Time     // download begin time
-	Dur       time.Duration // download elapsed time
-	Per       float64       // complete percent. range 0.0 ~ 1.0
-	Size      int64         // bytes downloaded
-	Speed     int64         // bytes per second
-	Length    int64         // content length
-	Durstr    string        // pretty format of Dur. like: 10:11
-	Perstr    string        // pretty format of Per. like: 3.9%
-	Sizestr   string        // pretty format of Size. like: 1.1M, 3.5G, 33K
-	Speedstr  string        // pretty format of Speed. like 1.1M/s
-	Lengthstr string        // pretty format of Length. like: 1.1M, 3.5G, 33K
-	Header    http.Header   // response header
+	Stat       string         // connecting, redirect, header, downloading, finished
+	Done       bool           // download is done
+	Begin      time.Time      // download begin time
+	Dur        time.Duration  // download elapsed time
+	Per        float64        // complete percent. range 0.0 ~ 1.0
+	Size       int64          // bytes downloaded
+	Speed      int64          // bytes per second
+	Length     int64          // content length
+	Durstr     string         // pretty format of Dur. like: 10:11
+	Perstr     string         // pretty format of Per. like: 3.9%
+	Sizestr    string         // pretty format of Size. like: 1.1M, 3.5G, 33K
+	Speedstr   string         // pretty format of Speed. like 1.1M/s
+	Lengthstr  string         // pretty format of Length. like: 1.1M, 3.5G, 33K
+	Response   *http.Response // response from http request
+	Header     http.Header    // response header
+	RedirectTo string         // redirect url (only available at Stat == redirect)
 }
 
 type Control struct {
@@ -266,6 +268,7 @@ func IoCopy(r io.ReadCloser, length int64, w io.Writer, opts ...interface{}) (er
 
 	st.Stat = "downloading"
 	if resp != nil {
+		st.Response = resp
 		st.Header = resp.Header
 	}
 	st.Begin = time.Now()
@@ -385,7 +388,14 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 	req.Header = header
 
 	var resp *http.Response
-	var conn net.Conn
+	//var conn net.Conn
+
+	callcb := func(st IocopyStat) bool {
+		if cb != nil {
+			err = cb(st)
+		}
+		return err != nil
+	}
 
 	tr := &http.Transport{
 		//DisableCompression: true,
@@ -395,7 +405,7 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 			} else {
 				c, e = net.Dial(network, addr)
 			}
-			conn = c
+			//conn = c
 			return
 		},
 	}
@@ -411,17 +421,13 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 				if len(via) >= 10 {
 					return errors.New("stopped after 10 redirects")
 				}
+				if callcb(IocopyStat{Stat: "redirect", RedirectTo: req.URL.String()}) {
+					return errors.New("user aborted")
+				}
 				return nil
 			}
 			return errors.New("following redirects not allowed")
 		},
-	}
-
-	callcb := func(st IocopyStat) bool {
-		if cb != nil {
-			err = cb(st)
-		}
-		return err != nil
 	}
 
 	done := make(chan int, 1)
@@ -458,7 +464,7 @@ out:
 		return
 	}
 
-	if callcb(IocopyStat{Stat: "header", Header: resp.Header}) {
+	if callcb(IocopyStat{Stat: "header", Response: resp, Header: resp.Header}) {
 		return
 	}
 	retResp = resp

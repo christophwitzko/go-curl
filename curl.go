@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -51,7 +52,7 @@ func (c *Control) Stop() {
 }
 
 func (c *Control) Stat() IocopyStat {
-	//really diry solution to prevent invalid memory address error
+	//really dirty solution to prevent invalid memory address error
 	if c.st == nil {
 		return *&IocopyStat{Stat: "connecting"}
 	}
@@ -66,9 +67,9 @@ func (c *Control) MaxSpeed(s int64) {
 func toFloat(o interface{}) (can bool, f float64) {
 	switch o.(type) {
 	case string:
-		str := o.(string)
-		n, _ := fmt.Sscanf(str, "%f", &f)
-		if n == 1 {
+		var err error
+		f, err = strconv.ParseFloat(o.(string), 64)
+		if err == nil {
 			can = true
 		}
 	case float64:
@@ -137,6 +138,17 @@ func optInt64(name string, opts []interface{}) (got bool, i int64) {
 	}
 	i = int64(f)
 	return
+}
+
+func optBool(name string, opts []interface{}) (bool, bool) {
+	got, val := optGet(name, opts)
+	if got {
+		i, err := strconv.ParseBool(fmt.Sprintf("%v", val))
+		if err == nil {
+			return true, i
+		}
+	}
+	return false, false
 }
 
 /*
@@ -387,9 +399,22 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 			return
 		},
 	}
+
+	hasfolred, followredirects := optBool("followredirects=", opts)
+	if !hasfolred {
+		followredirects = true
+	}
 	client := &http.Client{
 		Transport: tr,
-		// TODO: CheckRedirect func(req *Request, via []*Request) error
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if followredirects {
+				if len(via) >= 10 {
+					return errors.New("stopped after 10 redirects")
+				}
+				return nil
+			}
+			return errors.New("following redirects not allowed")
+		},
 	}
 
 	callcb := func(st IocopyStat) bool {

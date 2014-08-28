@@ -37,6 +37,7 @@ func test3() {
 			return nil
 		},
 		"maxspeed=", 30*1000,
+		"followredirects=", false,
 	)
 }
 
@@ -70,17 +71,20 @@ func test6() {
 }
 
 func test7() {
-	curl.File(
-		"http://de.edis.at/10MB.test",
-		"a.test",
-		func(st curl.IocopyStat) error {
-			fmt.Println(st.Stat, st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
-			// return errors.New("I want to stop")
-			return nil
-		},
-	)
+	cb := func(st curl.IocopyStat) error {
+		switch st.Stat {
+		case "downloading", "finished":
+			fmt.Println("D", st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
+		case "header":
+			fmt.Println("Server:", st.Header["Server"][0])
+		}
+
+		// return errors.New("I want to stop")
+		return nil
+	}
+	curl.File("http://de.edis.at/10MB.test", "a.test", cb, "cbinterval=", 0.1, "maxspeed=", 2*1024*1024)
 }
 
 func main() {
-	test4()
+	test7()
 }

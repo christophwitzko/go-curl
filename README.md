@@ -76,20 +76,22 @@ size= 9.5MB average speed= 1.9MB/s server= nginx/0.7.67
 #### The IocopyStat struct:
 ```go
 type IocopyStat struct {
-  Stat      string        // connection, header, downloading, finished
-  Done      bool          // download is done
-  Begin     time.Time     // download begin time
-  Dur       time.Duration // download elapsed time
-  Per       float64       // complete percent. range 0.0 ~ 1.0
-  Size      int64         // bytes downloaded
-  Speed     int64         // bytes per second
-  Length    int64         // content length
-  Durstr    string        // pretty format of Dur. like: 10:11
-  Perstr    string        // pretty format of Per. like: 3.9%
-  Sizestr   string        // pretty format of Size. like: 1.1M, 3.5G, 33K
-  Speedstr  string        // pretty format of Speed. like 1.1M/s
-  Lengthstr string        // pretty format of Length. like: 1.1M, 3.5G, 33K
-  Header    http.Header   // response header
+  Stat       string         // connecting, redirect, header, downloading, finished
+  Done       bool           // download is done
+  Begin      time.Time      // download begin time
+  Dur        time.Duration  // download elapsed time
+  Per        float64        // complete percent. range 0.0 ~ 1.0
+  Size       int64          // bytes downloaded
+  Speed      int64          // bytes per second
+  Length     int64          // content length
+  Durstr     string         // pretty format of Dur. like: 10:11
+  Perstr     string         // pretty format of Per. like: 3.9%
+  Sizestr    string         // pretty format of Size. like: 1.1M, 3.5G, 33K
+  Speedstr   string         // pretty format of Speed. like 1.1M/s
+  Lengthstr  string         // pretty format of Length. like: 1.1M, 3.5G, 33K
+  Response   *http.Response // response from http request
+  Header     http.Header    // response header
+  RedirectTo string         // redirect url (only available at Stat == redirect)
 }
 ```
 ### Monitor progress

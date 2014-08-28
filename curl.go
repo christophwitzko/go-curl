@@ -67,23 +67,9 @@ func (c *Control) MaxSpeed(s int64) {
 }
 
 func toFloat(o interface{}) (can bool, f float64) {
-	switch o.(type) {
-	case string:
-		var err error
-		f, err = strconv.ParseFloat(o.(string), 64)
-		if err == nil {
-			can = true
-		}
-	case float64:
-		f = o.(float64)
-		can = true
-	case int:
-		f = float64(o.(int))
-		can = true
-	case int64:
-		f = float64(o.(int64))
-		can = true
-	}
+	var err error
+	f, err = strconv.ParseFloat(fmt.Sprintf("%v", o), 64)
+	can = (err == nil)
 	return
 }
 
@@ -142,10 +128,28 @@ func optInt64(name string, opts []interface{}) (got bool, i int64) {
 	return
 }
 
-func optBool(name string, opts []interface{}) (bool, bool) {
-	got, val := optGet(name, opts)
+func optIntv(opts []interface{}) (intv time.Duration) {
+	var hasintv bool
+	hasintv, intv = optDuration("cbinterval=", opts)
+	if !hasintv {
+		intv = time.Second
+	}
+	return
+}
+
+func optString(name string, opts []interface{}) (got bool, s string) {
+	var val interface{}
+	got, val = optGet(name, opts)
 	if got {
-		i, err := strconv.ParseBool(fmt.Sprintf("%v", val))
+		s = fmt.Sprintf("%v", val)
+	}
+	return
+}
+
+func optBool(name string, opts []interface{}) (bool, bool) {
+	got, val := optString(name, opts)
+	if got {
+		i, err := strconv.ParseBool(val)
 		if err == nil {
 			return true, i
 		}
@@ -181,15 +185,6 @@ func (st *IocopyStat) finish() {
 	st.Done = true
 	st.Stat = "finished"
 	st.update()
-}
-
-func optIntv(opts []interface{}) (intv time.Duration) {
-	var hasintv bool
-	hasintv, intv = optDuration("cbinterval=", opts)
-	if !hasintv {
-		intv = time.Second
-	}
-	return
 }
 
 type mywriter struct {
@@ -357,7 +352,17 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 	var req *http.Request
 	var cb IocopyCb
 
-	req, err = http.NewRequest("GET", url, nil)
+	hasmet, method := optString("method=", opts)
+	if !hasmet {
+		method = "GET"
+	}
+	var reqBody io.Reader = nil
+	hasdata, rbdy := optGet("data=", opts)
+	if hasdata {
+		reqBody = rbdy.(io.Reader)
+	}
+	method = strings.ToUpper(method)
+	req, err = http.NewRequest(method, url, reqBody)
 	if err != nil {
 		return
 	}
@@ -382,7 +387,7 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 	if header == nil {
 		header = http.Header{
 			"Accept":     {"*/*"},
-			"User-Agent": {"curl/7.21.6 (i686-pc-linux-gnu) libcurl/7.21.6 OpenSSL/1.0.0e zlib/1.2.3.4 libidn/1.22"},
+			"User-Agent": {"curl/7.37.1"},
 		}
 	}
 	req.Header = header

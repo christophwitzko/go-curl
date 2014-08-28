@@ -25,6 +25,13 @@ func TestToFloat(t *testing.T) {
 	if f != 0.321 {
 		t.Fail()
 	}
+	got, f = toFloat(3)
+	if !got {
+		t.Fail()
+	}
+	if f != 3 {
+		t.Fail()
+	}
 }
 
 func TestOptBool(t *testing.T) {

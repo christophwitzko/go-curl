@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/christophwitzko/go-curl"
+	"strings"
 	"time"
 )
 
@@ -49,12 +50,13 @@ func test4() {
 		}
 		return nil
 	}
-	err, _, resp := curl.String("http://google.com/404", cb)
+	err, str, resp := curl.String("http://httpbin.org/post", cb, "method=", "POST", "data=", strings.NewReader("{\"asd\": \"test\"}"))
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(resp.Header.Get("Server"))
+	fmt.Println(resp.Header)
+	fmt.Println(str)
 }
 
 func test5() {

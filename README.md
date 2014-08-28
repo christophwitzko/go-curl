@@ -58,8 +58,22 @@ curl.File("http://google.com", "file", header)
 ### These params can be use in any function and in any order
 ```go
 curl.File("http://google.com", "index.html", "timeout=", 10, header)
-curl.String("http://google.com", "index.html", timeout=", 10)
+curl.String("http://google.com", "index.html", "timeout=", 10)
 ```
+#### Options:
+
+| Option            | Type                        | Default       |
+|------------------ |---------------------------- |-------------  |
+| method=           | string                      | GET           |
+| data=             | io.Reader                   | nil           |
+| dialtimeout=      | time.Duration               | 0             |
+| timeout=          | time.Duration               | 0             |
+| cbinterval=       | time.Duration               | time.Second   |
+| followredirects=  | bool                        | true          |
+| readtimeout=      | time.Duration               | 0             |
+| deadline=         | time.Time or time.Duration  | 0             |
+| maxspeed=         | int64                       | 0             |
+
 ## Advanced Usage
 
 ### Get detail info
@@ -108,8 +122,8 @@ curl.File(
 ```
 #### Outputs:
 ```
-connecting     
-header     
+connecting
+header
 downloading 17.2% 1.6MB 9.5MB 1.6MB/s 0:01
 downloading 38.3% 3.6MB 9.5MB 2.0MB/s 0:02
 downloading 59.5% 5.7MB 9.5MB 2.0MB/s 0:03

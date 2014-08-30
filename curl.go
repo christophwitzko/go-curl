@@ -367,11 +367,8 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 		return
 	}
 
-	var header http.Header
 	for _, o := range opts {
 		switch o.(type) {
-		case http.Header:
-			header = o.(http.Header)
 		case func(IocopyStat) error:
 			cb = o.(func(IocopyStat) error)
 		}
@@ -384,16 +381,14 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 
 	intv := optIntv(opts)
 
-	if header == nil {
-		header = http.Header{
-			"Accept":     {"*/*"},
-			"User-Agent": {"curl/7.37.1"},
-		}
+	var header http.Header
+	hasheader, iheader := optGet("header=", opts)
+	if oheader, tcok := iheader.(http.Header); hasheader && tcok {
+		header = oheader
 	}
 	req.Header = header
 
 	var resp *http.Response
-	//var conn net.Conn
 
 	callcb := func(st IocopyStat) bool {
 		if cb != nil {
@@ -402,15 +397,18 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 		return err != nil
 	}
 
+	hasdiscomp, disablecompression := optBool("disablecompression=", opts)
+	if !hasdiscomp {
+		disablecompression = false
+	}
 	tr := &http.Transport{
-		//DisableCompression: true,
+		DisableCompression: disablecompression,
 		Dial: func(network, addr string) (c net.Conn, e error) {
 			if hasdto {
 				c, e = net.DialTimeout(network, addr, dto)
 			} else {
 				c, e = net.Dial(network, addr)
 			}
-			//conn = c
 			return
 		},
 	}

@@ -2,12 +2,12 @@
 
 > Fork from https://github.com/go-av/curl
 
-* WITHOUT libcurl.so just using "net/http"
+* WITHOUT libcurl.so - just using "net/http"
 * Monitoring progress
 * Timeouts and deadline
 * Speed limit
 
-Examples: test/test_curl.go
+Examples: [test/test_curl.go](test/test_curl.go)
 
 ## Simple Usage
 
@@ -53,26 +53,29 @@ curl.File("http://google.com", "index.html", "maxspeed=", 30*1024)
 header := http.Header {
   "User-Agent" : {"curl/7.29.0"},
 }
-curl.File("http://google.com", "file", header)
+curl.File("http://google.com", "file", "header=", header)
 ```
 ### These params can be use in any function and in any order
 ```go
-curl.File("http://google.com", "index.html", "timeout=", 10, header)
-curl.String("http://google.com", "index.html", "timeout=", 10)
+curl.File("http://google.com", "index.html", "timeout=", 10)
+curl.String("http://google.com", "index.html", "maxspeed=", 30*1024, "timeout=", 10)
 ```
 #### Options:
 
-| Option            | Type                        | Default       |
-|------------------ |---------------------------- |-------------  |
-| method=           | string                      | GET           |
-| data=             | io.Reader                   | nil           |
-| dialtimeout=      | time.Duration               | 0             |
-| timeout=          | time.Duration               | 0             |
-| cbinterval=       | time.Duration               | time.Second   |
-| followredirects=  | bool                        | true          |
-| readtimeout=      | time.Duration               | 0             |
-| deadline=         | time.Time or time.Duration  | 0             |
-| maxspeed=         | int64                       | 0             |
+| Option              | Type                        | Default       |
+|-------------------- |---------------------------- |-------------  |
+| method=             | string                      | GET           |
+| data=               | io.Reader                   | nil           |
+| dialtimeout=        | time.Duration               | 0             |
+| readtimeout=        | time.Duration               | 0             |
+| timeout=            | time.Duration               | 0             |
+| cbinterval=         | time.Duration               | time.Second   |
+| followredirects=    | bool                        | true          |
+| deadline=           | time.Time or time.Duration  | 0             |
+| maxspeed=           | int64                       | 0             |
+| header=             | http.Header                 | nil           |
+| disablecompression= | bool                        | false         |
+
 
 ## Advanced Usage
 

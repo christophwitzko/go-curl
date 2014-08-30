@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/christophwitzko/go-curl"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -37,8 +38,9 @@ func test3() {
 			//fmt.Println(st.Header["Date"])
 			return nil
 		},
-		"maxspeed=", 30*1000,
+		"maxspeed=", 30*1024,
 		"followredirects=", false,
+		"header=", http.Header{"User-Agent": {"curl/7.29.0"}},
 	)
 }
 
@@ -50,7 +52,12 @@ func test4() {
 		}
 		return nil
 	}
-	err, str, resp := curl.String("http://httpbin.org/post", cb, "method=", "POST", "data=", strings.NewReader("{\"asd\": \"test\"}"))
+	err, str, resp := curl.String(
+		"http://httpbin.org/post", cb, "method=", "POST",
+		"data=", strings.NewReader("{\"asd\": \"test\"}"),
+		"disablecompression=", true,
+		"header=", http.Header{"X-My-Header": {"Gopher"}},
+	)
 	if err != nil {
 		fmt.Println(err)
 		return

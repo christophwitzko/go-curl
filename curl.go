@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-type IocopyStat struct {
+type IoCopyStat struct {
 	Stat       string         // connecting, redirect, header, downloading, finished
 	Done       bool           // download is done
 	Begin      time.Time      // download begin time
@@ -29,34 +29,27 @@ type IocopyStat struct {
 	Lengthstr  string         // pretty format of Length. like: 1.1M, 3.5G, 33K
 	Response   *http.Response // response from http request
 	Header     http.Header    // response header
-	RedirectTo string         // redirect url (only available at Stat == redirect)
+	RedirectTo string         // redirect url (only available at Stat == "redirect")
 }
 
 type Control struct {
 	stop        bool
 	maxSpeed    int64
-	st          *IocopyStat
+	st          *IoCopyStat
 	readTimeout time.Duration
 	dialTimeout time.Duration
 	deadline    time.Time
 }
 
-type IocopyCb func(st IocopyStat) error
-
-/*
-???
-type deadlineS interface {
-	SetReadDeadline(t time.Time) error
-}*/
+type IoCopyCb func(st IoCopyStat) error
 
 func (c *Control) Stop() {
 	c.stop = true
 }
 
-func (c *Control) Stat() IocopyStat {
-	//really dirty solution to prevent invalid memory address error
+func (c *Control) Stat() IoCopyStat {
 	if c.st == nil {
-		return *&IocopyStat{Stat: "connecting"}
+		return *&IoCopyStat{Stat: "connecting"}
 	}
 	c.st.update()
 	return *c.st
@@ -157,16 +150,7 @@ func optBool(name string, opts []interface{}) (bool, bool) {
 	return false, false
 }
 
-/*
-debugging?
-func dbp(opts ...interface{}) {
-	if false {
-		log.Println(opts...)
-	}
-}
-*/
-
-func (st *IocopyStat) update() {
+func (st *IoCopyStat) update() {
 	if st.Length > 0 {
 		st.Per = float64(st.Size) / float64(st.Length)
 	}
@@ -178,7 +162,7 @@ func (st *IocopyStat) update() {
 	st.Durstr = PrettyDur(st.Dur)
 }
 
-func (st *IocopyStat) finish() {
+func (st *IoCopyStat) finish() {
 	dur := float64(time.Since(st.Begin)) / float64(time.Second)
 	st.Speed = int64(float64(st.Size) / dur)
 	st.Per = 1.0
@@ -206,27 +190,27 @@ func (m *mywriter) Write(p []byte) (n int, err error) {
 }
 
 func IoCopy(r io.ReadCloser, length int64, w io.Writer, opts ...interface{}) (err error) {
-	var st *IocopyStat
-	var cb IocopyCb
+	var st *IoCopyStat
+	var cb IoCopyCb
 	var ct *Control
 	var resp *http.Response
 
 	for _, o := range opts {
 		switch o.(type) {
-		case *IocopyStat:
-			st = o.(*IocopyStat)
+		case *IoCopyStat:
+			st = o.(*IoCopyStat)
 		case *Control:
 			ct = o.(*Control)
 		case *http.Response:
 			resp = o.(*http.Response)
-		case func(IocopyStat) error:
-			cb = o.(func(IocopyStat) error)
+		case func(IoCopyStat) error:
+			cb = o.(func(IoCopyStat) error)
 		}
 	}
 
 	myw := &mywriter{Writer: w}
 	if st == nil {
-		st = &IocopyStat{}
+		st = &IoCopyStat{}
 	}
 
 	if ct == nil {
@@ -333,7 +317,6 @@ func IoCopy(r io.ReadCloser, length int64, w io.Writer, opts ...interface{}) (er
 			} else {
 				idle++
 			}
-			//log.Println("idle", idle, myw.n, n, time.Duration(3)*intv)
 			if hasrto && time.Duration(idle)*intv > rto {
 				err = errors.New("read timeout")
 				return
@@ -350,7 +333,7 @@ func IoCopy(r io.ReadCloser, length int64, w io.Writer, opts ...interface{}) (er
 
 func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 	var req *http.Request
-	var cb IocopyCb
+	var cb IoCopyCb
 
 	hasmet, method := optString("method=", opts)
 	if !hasmet {
@@ -369,8 +352,8 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 
 	for _, o := range opts {
 		switch o.(type) {
-		case func(IocopyStat) error:
-			cb = o.(func(IocopyStat) error)
+		case func(IoCopyStat) error:
+			cb = o.(func(IoCopyStat) error)
 		}
 	}
 
@@ -390,7 +373,7 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 
 	var resp *http.Response
 
-	callcb := func(st IocopyStat) bool {
+	callcb := func(st IoCopyStat) bool {
 		if cb != nil {
 			err = cb(st)
 		}
@@ -424,7 +407,7 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 				if len(via) >= 10 {
 					return errors.New("stopped after 10 redirects")
 				}
-				if callcb(IocopyStat{Stat: "redirect", RedirectTo: req.URL.String()}) {
+				if callcb(IoCopyStat{Stat: "redirect", RedirectTo: req.URL.String()}) {
 					return errors.New("user aborted")
 				}
 				return nil
@@ -444,7 +427,7 @@ func Dial(url string, opts ...interface{}) (err error, retResp *http.Response) {
 
 	starttm := time.Now()
 
-	if callcb(IocopyStat{Stat: "connecting"}) {
+	if callcb(IoCopyStat{Stat: "connecting"}) {
 		return
 	}
 out:
@@ -457,7 +440,7 @@ out:
 				err = errors.New("dial timeout")
 				return
 			}
-			if callcb(IocopyStat{Stat: "connecting"}) {
+			if callcb(IoCopyStat{Stat: "connecting"}) {
 				return
 			}
 		}
@@ -467,7 +450,7 @@ out:
 		return
 	}
 
-	if callcb(IocopyStat{Stat: "header", Response: resp, Header: resp.Header}) {
+	if callcb(IoCopyStat{Stat: "header", Response: resp, Header: resp.Header}) {
 		return
 	}
 	retResp = resp

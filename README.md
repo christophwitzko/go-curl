@@ -81,7 +81,7 @@ curl.String("http://google.com", "index.html", "maxspeed=", 30*1024, "timeout=",
 
 ### Get detail info
 ```go
-var st curl.IocopyStat
+var st curl.IoCopyStat
 curl.File("http://de.edis.at/10MB.test", "a.test", &st)
 fmt.Println("size=", st.Sizestr, "average speed=", st.Speedstr, "server=", st.Header.Get("Server"))
 ```
@@ -90,9 +90,9 @@ fmt.Println("size=", st.Sizestr, "average speed=", st.Speedstr, "server=", st.He
 size= 9.5MB average speed= 1.9MB/s server= nginx/0.7.67
 ```
 
-#### The IocopyStat struct:
+#### The IoCopyStat struct:
 ```go
-type IocopyStat struct {
+type IoCopyStat struct {
   Stat       string         // connecting, redirect, header, downloading, finished
   Done       bool           // download is done
   Begin      time.Time      // download begin time
@@ -116,7 +116,7 @@ type IocopyStat struct {
 curl.File(
   "http://de.edis.at/10MB.test",
   "a.test",
-  func(st curl.IocopyStat) error {
+  func(st curl.IoCopyStat) error {
     fmt.Println(st.Stat, st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
     // return errors.New("I want to stop")
     return nil
@@ -169,7 +169,7 @@ curl.PrettyDur(time.Second*66) // 1:06
 r, _ := os.Open("infile")
 w, _ := os.Create("outfile")
 length := 1024*888
-cb := func (st curl.IocopyStat) error {
+cb := func (st curl.IoCopyStat) error {
   fmt.Println(st.Perstr, st.Sizestr, st.Lengthstr, st.Speedstr, st.Durstr)
   return nil
 }

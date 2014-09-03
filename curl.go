@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// IoCopyStat is a struct that contains all information about the IoCopy progress.
 type IoCopyStat struct {
 	Stat       string         // connecting, redirect, header, downloading, finished
 	Done       bool           // download is done
@@ -24,23 +25,22 @@ type IoCopyStat struct {
 	Length     int64          // content length
 	Durstr     string         // pretty format of Dur. like: 10:11
 	Perstr     string         // pretty format of Per. like: 3.9%
-	Sizestr    string         // pretty format of Size. like: 1.1M, 3.5G, 33K
-	Speedstr   string         // pretty format of Speed. like 1.1M/s
-	Lengthstr  string         // pretty format of Length. like: 1.1M, 3.5G, 33K
+	Sizestr    string         // pretty format of Size. like: 1.1MB, 3.5GB, 33KB
+	Speedstr   string         // pretty format of Speed. like 1.1MB/s
+	Lengthstr  string         // pretty format of Length. like: 1.1MB, 3.5GB, 33KB
 	Response   *http.Response // response from http request
 	Header     http.Header    // response header
 	RedirectTo string         // redirect url (only available at Stat == "redirect")
 }
 
+// Control is a Controller for a curl operation.
 type Control struct {
-	stop        bool
-	maxSpeed    int64
-	st          *IoCopyStat
-	readTimeout time.Duration
-	dialTimeout time.Duration
-	deadline    time.Time
+	stop     bool
+	maxSpeed int64
+	st       *IoCopyStat
 }
 
+// Representing the monitoring callback.
 type IoCopyCb func(st IoCopyStat) error
 
 func (c *Control) Stop() {
@@ -55,6 +55,7 @@ func (c *Control) Stat() IoCopyStat {
 	return *c.st
 }
 
+// Change the maxSpeed during the download process.
 func (c *Control) MaxSpeed(s int64) {
 	c.maxSpeed = s
 }

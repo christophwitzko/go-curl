@@ -31,6 +31,7 @@ type IoCopyStat struct {
 	Response   *http.Response // response from http request
 	Header     http.Header    // response header
 	RedirectTo string         // redirect url (only available at Stat == "redirect")
+	Intv       int64          //cb interval
 }
 
 // Control is a Controller for a curl operation.
@@ -155,6 +156,7 @@ func (st *IoCopyStat) update() {
 	if st.Length > 0 {
 		st.Per = float64(st.Size) / float64(st.Length)
 	}
+	st.Speed *= (int64(time.Second) / st.Intv)
 	st.Dur = time.Since(st.Begin)
 	st.Perstr = PrettyPer(st.Per)
 	st.Sizestr = PrettySize(st.Size)
@@ -253,6 +255,7 @@ func IoCopy(r io.ReadCloser, length int64, w io.Writer, opts ...interface{}) (er
 	}
 	st.Begin = time.Now()
 	st.Length = length
+	st.Intv = int64(intv)
 
 	done := make(chan int, 0)
 	go func() {

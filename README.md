@@ -1,6 +1,7 @@
 # go-curl
 [![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
 
+for a maintained alternative, try [andelf/go-curl](https://github.com/andelf/go-curl)
 ## Documentation:
 
 http://godoc.org/github.com/christophwitzko/go-curl
